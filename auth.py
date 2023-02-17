@@ -5,6 +5,9 @@ from jose import jwt
 from datetime import datetime, timedelta
 import sqlite3
 
+from sqlmodel import Session
+
+from database.olympia_database import get_user
 from models.login_models import User, TokenData
 
 
@@ -19,10 +22,11 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # Setup database connection
-conn = sqlite3.connect('olympia.db')
-c = conn.cursor()
+# conn = sqlite3.connect('olympia.db')
+# c = conn.cursor()
 
 # session = get_session()
+
 
 # Authentication functions
 def verify_password(plain_password, hashed_password):
@@ -31,15 +35,6 @@ def verify_password(plain_password, hashed_password):
 
 def get_password_hash(password):
     return pwd_context.hash(password)
-
-
-def get_user(username: str):
-    c.execute("SELECT id, username, hashed_password FROM users WHERE username = ?", (username,))
-    result = c.fetchone()
-    if result is None:
-        return None
-    user = User(id=result[0], username=result[1], hashed_password=result[2])
-    return user
 
 
 def authenticate_user(username: str, password: str):
@@ -67,7 +62,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
 @router.post("/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(*, form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
@@ -76,7 +71,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @router.get("/users/me")
-async def read_users_me(token: str = Depends(oauth2_scheme)):
+async def read_user_me(*, token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -86,14 +81,3 @@ async def read_users_me(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(username=username)
         return token_data
 
-
-@router.post("/users")
-async def create_user(username: str, password: str, token: str = Depends(oauth2_scheme)):
-    if not token:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    hashed_password = get_password_hash(password)
-    c.execute("INSERT INTO users (username, hashed_password) VALUES (?, ?)", (username, hashed_password))
-    conn.commit()
-    user = get_user(username)
-    access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}

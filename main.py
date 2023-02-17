@@ -1,14 +1,15 @@
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends
-from sqlmodel import Session, create_engine
+from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from auth import router as auth_router
-from database.olympia_database import select_ergebnisse
-from database.setup import get_session
+from admin import router as admin_router
+from database.olympia_database import select_ergebnisse, select_athletes
+
 
 app = FastAPI()
 app.include_router(auth_router)
+app.include_router(admin_router)
 load_dotenv()
 origins = ["http://localhost:3000"]
 
@@ -22,6 +23,12 @@ app.add_middleware(
 
 
 @app.get("/ergebnisse")
-async def get_ergebnisse(session: Session = Depends(get_session)):
-    ergebnisse = select_ergebnisse(session)
+async def root():
+    ergebnisse = select_ergebnisse()
     return ergebnisse
+
+
+@app.get("/athleten")
+async def root():
+    athletes = select_athletes()
+    return athletes

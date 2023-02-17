@@ -2,13 +2,14 @@ from sqlmodel import SQLModel, Relationship, Field
 
 
 class Ergebnisse(SQLModel, table=True):
+    __tablename__ = "e_ergebnisse"
     e_pk: int = Field(primary_key=True)
     e_a_pk: int = Field(foreign_key="athleten.a_pk")
     e_platzierung: int = Field()
     e_wert: int = Field()
 
     # Define the relationship with the Athleten table
-    athleten: "Athleten" = Relationship(back_populates="ergebnisse")
+    # athleten: "Athleten" = Relationship(back_populates="ergebnisse")
 
     # Athleten.ergebnisse = Relationship(
     #     back_populates="athleten",
