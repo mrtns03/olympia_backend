@@ -1,8 +1,7 @@
-from pydantic import Field
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, Field
 
 
 class Laender(SQLModel, table=True):
     __tablename__ = "l_laender"
-    l_pk: int = Field(primary_key=True)
-    l_bezeichnung: str = Field(sa_column_name="l_bezeichnung")
+    l_pk: int = Field(default=None, primary_key=True)
+    l_bezeichnung: str = Field()
